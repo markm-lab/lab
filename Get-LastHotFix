@@ -1,0 +1,41 @@
+function Get-LastHotfix {
+    param([string]$serverName)
+    Write-Host "`nGetting the last installed hotfix for $serverName..." -ForegroundColor Green
+    try {
+        $hotfixes = Get-HotFix -ComputerName $serverName | Sort-Object -Property InstalledOn -Descending
+        
+        if ($hotfixes.Count -gt 0) {
+            $lastHotfix = $hotfixes[0]
+            [PSCustomObject]@{
+                ServerName  = $serverName
+                HotFixID    = $lastHotfix.HotFixID
+                Description = $lastHotfix.Description
+                InstalledOn = $lastHotfix.InstalledOn
+            }
+        } else {
+            Write-Host "No hotfixes found on $serverName." -ForegroundColor Red
+            [PSCustomObject]@{
+                ServerName  = $serverName
+                HotFixID    = "N/A"
+                Description = "No hotfix found"
+                InstalledOn = "N/A"
+            }
+        }
+    } catch {
+        Write-Host "Error retrieving hotfix information from ${serverName}: $_" -ForegroundColor Red
+        [PSCustomObject]@{
+            ServerName  = $serverName
+            HotFixID    = "Error"
+            Description = "Failed to retrieve hotfix data"
+            InstalledOn = "N/A"
+        }
+    }
+}
+
+# Corrected command to retrieve Domain Controllers
+$serverNames = Get-ADDomainController -Filter * | Select-Object -ExpandProperty Name
+
+# Iterate over each server and get the last hotfix
+foreach ($serverName in $serverNames) {
+    Get-LastHotfix -serverName $serverName
+}
